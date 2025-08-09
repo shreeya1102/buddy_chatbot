@@ -1,5 +1,11 @@
 from dotenv import load_dotenv
 import os
+import gradio as gr
+from gradio.themes.builder_app import themes, clear
+
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_google_genai import ChatGoogleGenerativeAI
 load_dotenv()
 
@@ -13,16 +19,48 @@ llm=ChatGoogleGenerativeAI(
     temperature=0.5,
 )
 
-
+prompt= ChatPromptTemplate.from_messages([
+    ("system",system_prompt),
+    (MessagesPlaceholder(variable_name="history")),
+    ("user", "{input}")]
+)
+chain = prompt | llm | StrOutputParser()
 
 print("Hi, I am Buddy, how can I help you today")
 
-while True:
-    user_input=input("You: ")
-    if user_input == "exit":
-        break
+history=[]
+def chat(user_input,hist):
+    print(user_input, hist)
 
-    response = llm.invoke([{"role": "system", "content": system_prompt},
-                           {"role": "user", "content": user_input}])
-    print(f"Buddy: {response.content}")
-    #print(f"Cool, thanks for sharing that {user_input}")
+
+
+    langchain_history = []
+    for item in hist:
+        if item['role'] == 'user':
+            langchain_history.append(HumanMessage(content =item['content']))
+        elif item['role'] == 'assistant':
+            langchain_history.append(AIMessage(content=item['content']))
+
+    response = chain.invoke({"input": user_input, "history": langchain_history} )
+
+    return "", hist +  [{'role': "user", "content": user_input},
+                {'role': "assistant", 'content': response}]
+
+page = gr.Blocks(
+    title = "Chat with Buddy",
+    theme = gr.themes.Soft()
+
+)
+with page:
+    gr.Markdown(
+        """
+         # Chat with Buddy
+        \nWelcome to your personal Study Buddy
+        """
+    )
+    chatbot= gr.Chatbot(type="messages")
+    msg=gr.Textbox()
+    msg.submit(chat, [msg, chatbot], [msg,chatbot ])
+    clear = gr.Button("Clear Chat")
+
+page.launch(share=True)
