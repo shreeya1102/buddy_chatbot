@@ -12,7 +12,7 @@ sdk: "gradio"
 
 sdk\_version: "3.38"
 
-app\_file: "app.py"
+app\_file: "main.py"
 
 pinned: false
 
