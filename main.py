@@ -1,7 +1,6 @@
 from dotenv import load_dotenv
 import os
 import gradio as gr
-from gradio.themes.builder_app import themes, clear
 
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import StrOutputParser
@@ -46,6 +45,9 @@ def chat(user_input,hist):
     return "", hist +  [{'role': "user", "content": user_input},
                 {'role': "assistant", 'content': response}]
 
+def clear_chat():
+    return  "",[]
+
 page = gr.Blocks(
     title = "Chat with Buddy",
     theme = gr.themes.Soft()
@@ -54,13 +56,15 @@ page = gr.Blocks(
 with page:
     gr.Markdown(
         """
-         # Chat with Buddy
+       Chat with Buddy
         \nWelcome to your personal Study Buddy
         """
     )
-    chatbot= gr.Chatbot(type="messages")
-    msg=gr.Textbox()
+    chatbot= gr.Chatbot(type="messages",
+                        avatar_images=[None, 'buddy.png'])
+    msg=gr.Textbox(show_label=False, placeholder="Ask your Buddy anything...")
     msg.submit(chat, [msg, chatbot], [msg,chatbot ])
-    clear = gr.Button("Clear Chat")
+    clear = gr.Button("Clear Chat",variant = "Secondary")
+    clear.click(clear_chat,outputs=[msg, chatbot])
 
 page.launch(share=True)
